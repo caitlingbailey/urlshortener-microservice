@@ -38,11 +38,14 @@ const createShortURL = (original_url, done) => {
   let current_url = new URL({original_url: original_url});
   
   current_url.save((err, data) => {
-    if (err) return console.log(err);
+    if (err) {
+      console.log(err);
+    };
     done(null, data)
   });
 };
 
+console.log(createShortURL("www.facebook.com"));
 
 // Your first API endpoint
 app.get('/api/hello', function(req, res) {
@@ -66,7 +69,7 @@ app.post("/api/shorturl", (req, res) => {
   
   dns.lookup(url_lookup, (err) => {
     if (err != null) {
-      res.json({"Error" : "Invalid URL"});
+      res.json({error : "invalid url"});
     };
   });
 
