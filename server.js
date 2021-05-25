@@ -37,12 +37,12 @@ const URL = mongoose.model("URL", urlSchema);
 const createShortURL = (original_url, done) => {
   let current_url = new URL({original_url: original_url});
   
-  current_url.save(function(err, data) {
-    if (err) return console.error(err);
-    console.log(data);
+  current_url.save((err, data) => {
+    if (err) return console.log(err);
     done(null, data)
   });
 };
+
 
 // Your first API endpoint
 app.get('/api/hello', function(req, res) {
@@ -55,20 +55,31 @@ app.listen(port, function() {
 
 // Create URL Shortener
 
+
 app.get("/api/shorturl", (req, res) => {
   res.json({output: req});
 })
 
 app.post("/api/shorturl", (req, res) => {
-  // console.log(req);
-  console.log(req.body.url);
+  const REPLACE_REGEX = /^https?:\/\//i
+  const url_lookup = req.body.url.replace(REPLACE_REGEX, '');
   
-  dns.lookup(req.body.url, (err, address, family) => {
-    if (err) return 1;
+  dns.lookup(url_lookup, (err) => {
+    if (err != null) {
+      res.json({"Error" : "Invalid URL"});
+    };
   });
 
-  createShortURL(req.body.url);
+  const original_url = req.body.url;
+  createShortURL(original_url);
 
   res.json({ original_url : req.body.url,
   short_url : 1});
 });
+
+const findURLId = (original_url, done) => {
+  URL.find({original_url: original_url}, function(err, urlFound) {
+    if (err) return console.error(err);
+    done(null, urlFound) 
+  });
+};
