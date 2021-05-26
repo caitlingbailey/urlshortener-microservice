@@ -5,7 +5,9 @@ const bodyParser = require('body-parser');
 const dns = require('dns');
 const app = express();
 const mongoose = require('mongoose');
+const { nanoid } = require('nanoid');
 
+// Connect to database
 mongoose.connect(process.env['MONGO_URI'], { useNewUrlParser: true, useUnifiedTopology: true });
 
 
@@ -26,26 +28,20 @@ app.get('/', function(req, res) {
 const Schema = mongoose.Schema;
 
 const urlSchema = new Schema({
-  original_url: { type: String, required: true },
-  short_url: {type: Number}
+  original_url: { 
+    type: String, 
+    required: true },
+  short_url: {
+    type: String, 
+    default: () => nanoid(5)},
+  clicks: {
+    type: Number, 
+    default: 0}
 });
+
 
 // Create instance of new schema
 const URL = mongoose.model("URL", urlSchema);
-
-// Method to create new URL
-const createShortURL = (original_url, done) => {
-  let current_url = new URL({original_url: original_url});
-  
-  current_url.save((err, data) => {
-    if (err) {
-      console.log(err);
-    };
-    done(null, data)
-  });
-};
-
-console.log(createShortURL("www.facebook.com"));
 
 // Your first API endpoint
 app.get('/api/hello', function(req, res) {
@@ -56,33 +52,58 @@ app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
 
+
 // Create URL Shortener
 
-
-app.get("/api/shorturl", (req, res) => {
-  res.json({output: req});
-})
-
-app.post("/api/shorturl", (req, res) => {
+app.post("/api/shorturl", async (req, res) => {
   const REPLACE_REGEX = /^https?:\/\//i
-  const url_lookup = req.body.url.replace(REPLACE_REGEX, '');
+  const original_url = req.body.url;
+  const url_lookup = original_url.replace(REPLACE_REGEX, '');
   
   dns.lookup(url_lookup, (err) => {
-    if (err != null) {
+    if (err) {
       res.json({error : "invalid url"});
     };
   });
 
-  const original_url = req.body.url;
   createShortURL(original_url);
 
-  res.json({ original_url : req.body.url,
-  short_url : 1});
+  let query = await URL.findOne({original_url : original_url});
+  const shortURL = query.short_url;
+
+  res.json({ original_url : original_url,
+  short_url : shortURL});
 });
 
-const findURLId = (original_url, done) => {
-  URL.find({original_url: original_url}, function(err, urlFound) {
-    if (err) return console.error(err);
-    done(null, urlFound) 
-  });
+app.get("/api/shorturl/:short_id", async (req, res) => {
+  // Mongoose call to find long URL
+  console.log(req.params.short_id);
+  shortId = req.params.short_id;
+
+  let query = await URL.findOne({short_url : shortId});
+  const redirectURL = query.original_url;
+
+  // If null, throw error
+  if (!query) return res.sendStatus(404);
+
+  // If not null, increment click count in database
+  URL.findOneAndUpdate({$inc : {clicks: 1}}).exec((err, clicksUpdated) => {
+    if (err) return console.log(err);
+  })
+
+  // Redirect user to original link
+  res.redirect(redirectURL)
+
+  res.json({output: "looks good"});
+})
+
+
+// Method to create new URL
+const createShortURL = async (original_url, done) => {
+  const new_url = new URL({ original_url : original_url });
+  await new_url.save();
 };
+
+// const findShortURL = (shortId) => {
+
+// }
