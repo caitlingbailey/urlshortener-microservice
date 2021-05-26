@@ -1,4 +1,4 @@
-# [URL Shortener Microservice](https://www.freecodecamp.org/learn/apis-and-microservices/apis-and-microservices-projects/url-shortener-microservice)
+# [URL Shortener Microservice](https://urlshortener-microservice.caitlingbailey.repl.co/)
 
 Microservice based on the back-end server part of the freeCodeCamp curriculum. 
 
