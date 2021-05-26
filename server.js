@@ -6,6 +6,8 @@ const dns = require('dns');
 const app = express();
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
+const validUrl = require('valid-url');
+
 
 // Connect to database
 mongoose.connect(process.env['MONGO_URI'], { useNewUrlParser: true, useUnifiedTopology: true });
@@ -59,20 +61,21 @@ app.post("/api/shorturl", async (req, res) => {
   const REPLACE_REGEX = /^https?:\/\//i
   const original_url = req.body.url;
   const url_lookup = original_url.replace(REPLACE_REGEX, '');
-  
-  dns.lookup(url_lookup, (err) => {
-    if (err) {
-      res.json({error : "invalid url"});
+
+  if (validUrl.isWebUri(original_url)) {
+    console.log('Looks like an URI');
+    createShortURL(original_url);
+
+    let query = await URL.findOne({original_url : original_url});
+    const shortURL = query.short_url;
+
+    res.json({ 
+      original_url : original_url,
+      short_url : shortURL});
+  } else {
+    console.log('Not a URI');
+    res.json({ error: 'invalid url' });
     };
-  });
-
-  createShortURL(original_url);
-
-  let query = await URL.findOne({original_url : original_url});
-  const shortURL = query.short_url;
-
-  res.json({ original_url : original_url,
-  short_url : shortURL});
 });
 
 app.get("/api/shorturl/:short_id", async (req, res) => {
