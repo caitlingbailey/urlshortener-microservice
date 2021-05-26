@@ -80,7 +80,6 @@ app.post("/api/shorturl", async (req, res) => {
 
 app.get("/api/shorturl/:short_id", async (req, res) => {
   // Mongoose call to find long URL
-  console.log(req.params.short_id);
   shortId = req.params.short_id;
 
   let query = await URL.findOne({short_url : shortId});
@@ -107,6 +106,9 @@ const createShortURL = async (original_url, done) => {
   await new_url.save();
 };
 
-// const findShortURL = (shortId) => {
+// Redirect to personal website
 
-// }
+app.get("/https://caitlingbailey.herokuapp.com/", async (req, res) => {
+  const portfolio_url = "https://caitlingbailey.herokuapp.com/";
+  res.redirect(portfolio_url);
+});
